@@ -1,0 +1,62 @@
+export const createHashNavigation = (anchor) => {
+    let hashHandler, wheelHandler
+    
+    return {
+        init: function() {
+            hashHandler =  this.hashchange.bind(this)
+            wheelHandler =  this.scrolling.bind(this)
+            
+            if(this.items.length !== anchor.length) {
+                console.warn('[svelte-ms@hash-navigation] Both childrens and anchors length should be the same!')
+            }
+
+            window.addEventListener('hashchange', hashHandler, false)
+            window.addEventListener('wheel', wheelHandler)
+            
+            const index = this.getLocationIndex()
+            if(index > -1) {
+                setTimeout(() => {
+                    this.move(index, true)
+                }, 100)
+            }
+        },
+        
+        scrolling: function() {
+            if(this.getMode() === 'normal') {
+                this.updateHash(this.getCurrent())
+            }
+        },
+        
+        hashchange: function () {
+            const index = this.getLocationIndex()
+            
+            if(index > -1) {
+                this.move(index, true)
+            }
+        },
+        
+        destroy: function() {
+            window.removeEventListener("hashchange", hashHandler)
+            window.removeEventListener("wheel", wheelHandler)
+        },
+        
+        getLocationIndex: () =>  {
+            try {
+                const val = location.hash.split('#')[1]
+                return anchor.indexOf(val)
+            } catch {
+                return -1
+            }
+        },
+        
+        afterScroll: function() {
+            this.updateHash(this.getCurrent())
+        },
+        
+        updateHash: function(current) {
+            if(typeof anchor[current] !== 'undefined') {
+                location.hash = '#' + anchor[current]
+            }
+        }
+    }
+}
