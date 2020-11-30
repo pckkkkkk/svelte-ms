@@ -154,10 +154,10 @@
 		move(current)
 		
 		__triggerPlugins('init')
-	})
 
-	onDestroy(() => {
-		el.removeEventListener('swipe', swiping)
+		return () => {
+			el.removeEventListener('swipe', swiping)
+		}
 	})
 </script>
 
