@@ -16,7 +16,7 @@ export const createHashNavigation = (anchor) => {
         
         hashchange: function () {
             const index = this.getLocationIndex()
-
+            
             if(index > -1) {
                 this.move(index, true)
             }
@@ -27,17 +27,17 @@ export const createHashNavigation = (anchor) => {
         },
         
         getLocationIndex: () =>  {
-            const val = location.hash.split('#')[1]
-            return anchor.indexOf(val)
+            try {
+                const val = location.hash.split('#')[1]
+                return anchor.indexOf(val)
+            } catch {
+                return -1
+            }
         },
         
         afterScroll: function() {
-            const hash = anchor[this.current]
-            
-            if(history.pushState) {
-                history.pushState({}, hash, '#' + hash);
-            } else {
-                location.hash = hash
+            if(typeof anchor[this.current] !== 'undefined') {
+                location.hash = anchor[this.current]
             }
         }
     }
