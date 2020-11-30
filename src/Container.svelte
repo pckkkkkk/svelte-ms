@@ -156,6 +156,7 @@
 		__triggerPlugins('init')
 
 		return () => {
+			__triggerPlugins('destroy')
 			el.removeEventListener('swipe', swiping)
 		}
 	})
