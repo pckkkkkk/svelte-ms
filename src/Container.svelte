@@ -1,7 +1,8 @@
 <script context="module">
 	import SwipeListener from 'swipe-listener';
-	import isMobile from 'is-mobile'
-
+	
+	export const isMobile = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+	
 	export function clamp(num, min, max) {
 		return num <= min ? min : num >= max ? max : num
 	}
