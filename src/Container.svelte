@@ -29,6 +29,7 @@
 	export let current = 0
 	export let plugins = []
 	export let options = defaultOptions
+	
 	options = Object.assign(defaultOptions, options)
 	
 	const getCurrent = () => current
@@ -46,15 +47,15 @@
 	setContext('items', writable([]))
 	setContext('is-normal', writable(width < options.minWidth))
 	
-	let [ items, isNormal, readyToBeAnimated ] = [
-	getContext('items'),
-	getContext('is-normal'),
-	getContext('ready-to-be-animated'),
-	]
+	let items = getContext('items')
+	let isNormal = getContext('is-normal')
+	let readyToBeAnimated = getContext('ready-to-be-animated')
 	
-	$:  mounted && updateWidth(width)
+	$:  updateWidth(width)
 	
 	const updateWidth = debounce((width) => {
+		if(!mounted) return
+
 		$isNormal = width < options.minWidth
 		$readyToBeAnimated = false
 		
@@ -76,10 +77,9 @@
 	const move = async (number, releaseAnimationBlock = false) => {
 		if($isNormal || isNaN(number)) return 
 		
-		let temp = current
+		const temp = current
 		current = clamp(number, 0, $items.length - 1)
 		if(temp === current ) return;
-		
 		
 		if(releaseAnimationBlock) {
 			$readyToBeAnimated = true
@@ -106,7 +106,7 @@
 		}, options.duration)
 	}
 	
-	const emit = (fn) => {
+	const emit = fn => {
 		plugins.map(p => {
 			if(fn in p) {
 				p[fn]
@@ -171,15 +171,14 @@
 
 <svelte:window bind:innerWidth={width} />
 
-<div 
+<div {style}
 bind:this={el}
 class:ms-mode-normal={$isNormal}
 class:ms-mode-scroll={!$isNormal}
 class="ms-container {className}"
-{style}
 on:wheel|passive={wheeling}
 on:scroll={wheeling}>
-<slot></slot>
+<slot />
 </div>
 
 <style>
