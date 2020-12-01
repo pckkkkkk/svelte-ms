@@ -19,7 +19,8 @@
   ],
   "files": [
     "src",
-    "dist"
+    "dist",
+    "plugin",
   ],
   "dependencies": {
     "swipe-listener": "^1.3.0"
