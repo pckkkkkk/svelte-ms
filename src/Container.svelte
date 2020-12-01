@@ -1,6 +1,7 @@
 <script context="module">
 	import SwipeListener from 'swipe-listener';
-	
+	import isMobile from 'is-mobile'
+
 	export function clamp(num, min, max) {
 		return num <= min ? min : num >= max ? max : num
 	}
@@ -95,7 +96,7 @@
 		
 		setTimeout(() => {
 			$readyToBeAnimated = true
-		}, 250)
+		}, 100)
 		
 		clearTimeout(stid)
 		stid = setTimeout(() => {
@@ -138,6 +139,8 @@
 	}
 	
 	const swiping = e => {
+		if(!isMobile()) return
+		
 		const directions = e.detail.directions;
 		
 		if(directions.top) {

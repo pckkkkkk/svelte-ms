@@ -21,6 +21,7 @@
     "src"
   ],
   "dependencies": {
+    "is-mobile": "^2.2.2",
     "swipe-listener": "^1.3.0"
   }
 }
