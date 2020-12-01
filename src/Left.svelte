@@ -6,7 +6,7 @@
 	let isNormal = getContext('is-normal')
 </script>
 
-<div class="ms-left-{$nth}" class:ms-mode-normal={$isNormal} style='transform: translateY(calc({$left} * 1%))'>
+<div class="ms-left ms-left-{$nth}" class:ms-mode-normal={$isNormal} style='transform: translateY(calc({$left} * 1%))'>
 	<slot nth={$nth}></slot>
 </div>
 
