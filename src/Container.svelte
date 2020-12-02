@@ -20,7 +20,7 @@
 </script>
 
 <script>
-	import { setContext, getContext, onMount } from 'svelte'
+	import { setContext, getContext, onMount, tick } from 'svelte'
 	import { writable } from 'svelte/store'
 	import { createEventDispatcher } from 'svelte';
 	
@@ -41,7 +41,7 @@
 	.map(([prop, val]) => `--ms-${prop}: ${val}`)
 	.join(';')
 	
-	let wait, stid, wtid, rtid, width, el, mounted
+	let wait, stid, rtid, width, el, mounted
 	
 	setContext('ready-to-be-animated', writable(true))
 	setContext('items', writable([]))
@@ -66,6 +66,8 @@
 			move(current, true)
 		} else {
 			el.scrollTop = el.clientHeight * current
+
+			wait = false
 		}
 		
 		clearTimeout(rtid)
@@ -75,38 +77,37 @@
 	}, 50)
 	
 	const move = async (number, releaseAnimationBlock = false) => {
-		return new Promise((resolve) => {
-			if($isNormal || isNaN(number)) return 
+		if($isNormal || isNaN(number)) return 
+		
+		const temp = current
+		current = clamp(number, 0, $items.length - 1)
+		if(temp === current ) return;
+		
+		if(releaseAnimationBlock) {
+			$readyToBeAnimated = true
+		}
+		
+		dispatch('before-scroll', { current })
+		emit('beforeScroll')
+		
+		for(let i = 0; i < $items.length; i++) {
+			const { nth } = $items[i]
 			
-			const temp = current
-			current = clamp(number, 0, $items.length - 1)
-			if(temp === current ) return;
+			$items[i].right = (current * 100) + -(nth * 200)
+			$items[i].left= -current * 100
+		}
+		
+		setTimeout(() => {
+			$readyToBeAnimated = true
+		}, 100)
+		
+		clearTimeout(stid)
+		stid = setTimeout(() => {
+			dispatch('after-scroll', { current })
+			emit('afterScroll')
 			
-			if(releaseAnimationBlock) {
-				$readyToBeAnimated = true
-			}
-			
-			dispatch('before-scroll', { current })
-			emit('beforeScroll')
-			
-			for(let i = 0; i < $items.length; i++) {
-				const { nth } = $items[i]
-				
-				$items[i].right = (current * 100) + -(nth * 200)
-				$items[i].left= -current * 100
-			}
-			
-			setTimeout(() => {
-				$readyToBeAnimated = true
-			}, 100)
-			
-			clearTimeout(stid)
-			stid = setTimeout(() => {
-				dispatch('after-scroll', { current })
-				emit('afterScroll')
-				resolve()
-			}, options.duration)
-		})
+			wait = false
+		}, (options.duration < 600 ? 600 : options.duration) + 150)
 	}
 	
 	const emit = fn => {
@@ -126,16 +127,13 @@
 		})
 	}
 	
-	const wheeling = ({ deltaY }) => {
+	const wheeling = async ({ deltaY }) => {
+		if(wait) return
+		
 		if(!$isNormal) {
-			if(wait) return
-			
 			wait = true
 			const dir = Math.sign(deltaY)
-			
-			move(current + dir).then(() => {
-				wait = false
-			})
+			move(current + dir)
 		} else {
 			current = Math.ceil(el.scrollTop / el.clientHeight)
 		}
