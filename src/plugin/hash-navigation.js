@@ -7,7 +7,7 @@ export const createHashNavigation = (anchor) => {
             wheelHandler =  this.scrolling.bind(this)
             
             if(this.items.length !== anchor.length) {
-                console.warn('[svelte-ms@hash-navigation] Both childrens and anchors length should be the same!')
+                console.warn('[hash-navigation] hash array length should be equal with the number of wrappers')
             }
 
             window.addEventListener('hashchange', hashHandler, false)
