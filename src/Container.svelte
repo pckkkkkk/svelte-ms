@@ -77,11 +77,17 @@
 	}, 50)
 	
 	const move = async (number, releaseAnimationBlock = false) => {
-		if($isNormal || isNaN(number)) return 
+		if($isNormal || isNaN(number)) { 
+			wait = false
+			return
+		}
 		
 		const temp = current
 		current = clamp(number, 0, $items.length - 1)
-		if(temp === current ) return;
+		if(temp === current ) {
+			wait = false
+			return
+		};
 		
 		if(releaseAnimationBlock) {
 			$readyToBeAnimated = true
@@ -107,6 +113,7 @@
 			emit('afterScroll')
 			
 			wait = false
+			console.log('finished')
 		}, (options.duration < 600 ? 600 : options.duration) + 150)
 	}
 	
