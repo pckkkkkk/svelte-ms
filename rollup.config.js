@@ -16,5 +16,6 @@ export default {
 	plugins: [
 		svelte(),
 		resolve()
-	]
+	],
+	external: ['swipe-listener']
 };
