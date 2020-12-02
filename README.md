@@ -18,8 +18,6 @@ Using npm:
 ## Usage
 ```todo```
 
-
 ## Caveats
-
 - buggy
 - primitive

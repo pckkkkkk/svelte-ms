@@ -55,7 +55,7 @@
 	
 	const updateWidth = debounce((width) => {
 		if(!mounted) return
-
+		
 		$isNormal = width < options.minWidth
 		$readyToBeAnimated = false
 		
@@ -75,35 +75,38 @@
 	}, 50)
 	
 	const move = async (number, releaseAnimationBlock = false) => {
-		if($isNormal || isNaN(number)) return 
-		
-		const temp = current
-		current = clamp(number, 0, $items.length - 1)
-		if(temp === current ) return;
-		
-		if(releaseAnimationBlock) {
-			$readyToBeAnimated = true
-		}
-		
-		dispatch('before-scroll', { current })
-		emit('beforeScroll')
-		
-		for(let i = 0; i < $items.length; i++) {
-			const { nth } = $items[i]
+		return new Promise((resolve) => {
+			if($isNormal || isNaN(number)) return 
 			
-			$items[i].right = (current * 100) + -(nth * 200)
-			$items[i].left= -current * 100
-		}
-		
-		setTimeout(() => {
-			$readyToBeAnimated = true
-		}, 100)
-		
-		clearTimeout(stid)
-		stid = setTimeout(() => {
-			dispatch('after-scroll', { current })
-			emit('afterScroll')
-		}, options.duration)
+			const temp = current
+			current = clamp(number, 0, $items.length - 1)
+			if(temp === current ) return;
+			
+			if(releaseAnimationBlock) {
+				$readyToBeAnimated = true
+			}
+			
+			dispatch('before-scroll', { current })
+			emit('beforeScroll')
+			
+			for(let i = 0; i < $items.length; i++) {
+				const { nth } = $items[i]
+				
+				$items[i].right = (current * 100) + -(nth * 200)
+				$items[i].left= -current * 100
+			}
+			
+			setTimeout(() => {
+				$readyToBeAnimated = true
+			}, 100)
+			
+			clearTimeout(stid)
+			stid = setTimeout(() => {
+				dispatch('after-scroll', { current })
+				emit('afterScroll')
+				resolve()
+			}, options.duration)
+		})
 	}
 	
 	const emit = fn => {
@@ -129,12 +132,10 @@
 			
 			wait = true
 			const dir = Math.sign(deltaY)
-			move(current + dir)
 			
-			clearTimeout(wtid)
-			wtid = setTimeout(() => {
+			move(current + dir).then(() => {
 				wait = false
-			}, Math.min(600, options.duration))
+			})
 		} else {
 			current = Math.ceil(el.scrollTop / el.clientHeight)
 		}
