@@ -1,8 +1,6 @@
 {
   "name": "svelte-ms",
   "svelte": "src/index.js",
-  "module": "dist/index.mjs",
-  "main": "dist/index.js",
   "version": "0.0.2",
   "scripts": {
     "build": "rollup -c",
