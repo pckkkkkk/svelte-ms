@@ -15,7 +15,7 @@
 	const defaultOptions = {
 		duration: 400,
 		easing: 'linear',
-		minWidth: 400
+		minWidth: 768
 	}
 </script>
 
@@ -133,7 +133,7 @@
 			
 			setTimeout(() => {
 				wait = false
-			}, 600)
+			}, Math.min(600, options.duration))
 		} else {
 			current = Math.ceil(el.scrollTop / el.clientHeight)
 		}
