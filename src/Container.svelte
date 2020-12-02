@@ -41,7 +41,7 @@
 	.map(([prop, val]) => `--ms-${prop}: ${val}`)
 	.join(';')
 	
-	let wait, stid, rtid, width, el, mounted
+	let wait, stid, wtid, rtid, width, el, mounted
 	
 	setContext('ready-to-be-animated', writable(true))
 	setContext('items', writable([]))
@@ -131,7 +131,8 @@
 			const dir = Math.sign(deltaY)
 			move(current + dir)
 			
-			setTimeout(() => {
+			clearTimeout(wtid)
+			wtid = setTimeout(() => {
 				wait = false
 			}, Math.min(600, options.duration))
 		} else {
