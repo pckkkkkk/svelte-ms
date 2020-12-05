@@ -1,7 +1,7 @@
 {
   "name": "svelte-ms",
   "svelte": "src/index.js",
-  "version": "0.1.0-0",
+  "version": "1.0.0-0",
   "scripts": {
     "build": "rollup -c",
     "prepublishOnly": "npm run build"
