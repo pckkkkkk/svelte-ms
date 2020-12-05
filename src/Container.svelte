@@ -45,7 +45,6 @@
 		items: writable([]),
 		current: writable(externalCurrent),
 		mode: writable(MODE_NORMAL),
-		ready: writable(true),
 		animDisabled: writable(false),
 		isVisible: ({ nth, current, threshold }) => (nth >= current - threshold) && (nth <= current +  threshold)
 	})
