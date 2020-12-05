@@ -1,12 +1,18 @@
 <script>
 	import { getContext } from 'svelte'
-
-	let left = getContext('left')
-	let nth = getContext('nth')
-	let isNormal = getContext('is-normal')
+	import { MODE_NORMAL } from 'svelte-ms/src/Container.svelte';
+	
+	const {
+		mode
+	} = getContext('container')
+	
+	const {
+		left,
+		nth,
+	} = getContext('wrapper')
 </script>
 
-<div class="ms-left ms-left-{$nth}" class:ms-mode-normal={$isNormal} style='transform: translateY(calc({$left} * 1%))'>
+<div class="ms-left ms-left-{$nth}" class:ms-mode-normal={$mode === MODE_NORMAL} style='transform: translateY(calc({$left} * 1%))'>
 	<slot nth={$nth}></slot>
 </div>
 

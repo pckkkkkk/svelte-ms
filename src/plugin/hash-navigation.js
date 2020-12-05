@@ -31,7 +31,11 @@ export const createHashNavigation = (anchor) => {
             const index = this.getLocationIndex()
             
             if(index > -1) {
-                this.move(index, true)
+                const current = this.getCurrent()
+                const [ m, M ] = [Math.min(current, index), Math.max(current, index)]
+                const silent = M - m > this.constants.DEFAULT_THRESHOLD
+
+                this.move(index, { silent })
             }
         },
         
