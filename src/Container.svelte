@@ -12,6 +12,10 @@
 		clearTimeout(interval, interval = setTimeout(() => callback(...args), time))
 	}
 	
+	export const MODE_SCROLL = 'scroll'
+	export const MODE_NORMAL = 'normal'
+	export const DEFAULT_THRESHOLD = 10
+	
 	const defaultOptions = {
 		duration: 400,
 		easing: 'linear',
@@ -20,102 +24,109 @@
 </script>
 
 <script>
-	import { setContext, getContext, onMount, tick } from 'svelte'
+	import { setContext, getContext, onMount } from 'svelte'
 	import { writable } from 'svelte/store'
 	import { createEventDispatcher } from 'svelte';
 	
-	let className = ''
+	const dispatch = createEventDispatcher()
+	
+	let className = '', externalCurrent = 0
 	export { className as class }
-	export let current = 0
+	export { externalCurrent as current}
+	
 	export let plugins = []
 	export let options = defaultOptions
 	
 	options = Object.assign(defaultOptions, options)
 	
-	const getCurrent = () => current
-	const getMode = () => $isNormal ? 'normal' : 'scroll'
+	const delay = (options.duration < 600 ? 600 : options.duration) + 150
 	
-	const dispatch = createEventDispatcher()
-	const style = Object
+	setContext('container', {
+		items: writable([]),
+		current: writable(externalCurrent),
+		mode: writable(MODE_NORMAL),
+		ready: writable(true),
+		animDisabled: writable(false),
+		isVisible: ({ nth, current, threshold }) => (nth >= current - threshold) && (nth <= current +  threshold)
+	})
+	
+	let {
+		items,
+		current,
+		mode,
+		isVisible,
+		animDisabled,
+	} = getContext('container')
+	
+	let wait, width, el, mounted
+	
+	$: style = Object
 	.entries(options)
 	.map(([prop, val]) => `--ms-${prop}: ${val}`)
 	.join(';')
+	$: normal = $mode === MODE_NORMAL
+	$: width && updateWidth()
+	$: $mode && updateMode()
 	
-	let wait, stid, rtid, width, el, mounted
+	const getMode = () => width < options.minWidth ? MODE_NORMAL: MODE_SCROLL
 	
-	setContext('ready-to-be-animated', writable(true))
-	setContext('items', writable([]))
-	setContext('is-normal', writable(width < options.minWidth))
-	
-	let items = getContext('items')
-	let isNormal = getContext('is-normal')
-	let readyToBeAnimated = getContext('ready-to-be-animated')
-	
-	$:  updateWidth(width)
-	
-	const updateWidth = debounce((width) => {
-		if(!mounted) return
+	const updateWidth = debounce(() => {
+		if(!mounted || !el) return
 		
-		$isNormal = width < options.minWidth
-		$readyToBeAnimated = false
-		
-		if(!el) return
-		
-		if(!$isNormal) {
-			el.scrollTop = 0
-			move(current, true)
-		} else {
-			el.scrollTop = el.clientHeight * current
-
-			wait = false
-		}
-		
-		clearTimeout(rtid)
-		rtid = setTimeout(() => {
-			$readyToBeAnimated = true
-		}, 100)
+		$mode = getMode()
 	}, 50)
 	
-	const move = async (number, releaseAnimationBlock = false) => {
-		if($isNormal || isNaN(number)) { 
+	const updateMode = () => {
+		if(!mounted || !el) return
+		
+		switch($mode) {
+			case MODE_NORMAL: 
+			
+			el.scrollTop = el.clientHeight * $current
 			wait = false
-			return
+			
+			break;
+			case MODE_SCROLL:
+			
+			el.scrollTop = 0
+			move($current, { forced: true })
+			
+			break;
+			default: break;
+		}
+	}
+	const move = (number, { forced, silent } = { forced: false, silent: false}) => {	
+		let err = !mounted || normal || isNaN(number)
+		
+		const temp = clamp(number, 0, $items.length - 1)
+		if(temp === $current || err) {
+			if(!forced) {
+				wait = false
+				return
+			}
 		}
 		
-		const temp = current
-		current = clamp(number, 0, $items.length - 1)
-		if(temp === current ) {
-			wait = false
-			return
-		};
+		$animDisabled = silent
+		$current = temp
 		
-		if(releaseAnimationBlock) {
-			$readyToBeAnimated = true
-		}
-		
-		dispatch('before-scroll', { current })
+		dispatch('before-scroll', { current: $current })
 		emit('beforeScroll')
 		
-		for(let i = 0; i < $items.length; i++) {
-			const { nth } = $items[i]
-			
-			$items[i].right = (current * 100) + -(nth * 200)
-			$items[i].left= -current * 100
+		
+		for(let i = 0; i < $items.length; i++) {			
+			$items[i].right = ($current * 100) + -($items[i].nth * 200)
+			$items[i].left= -$current * 100
+			$items[i].visible = isVisible({ nth: $items[i].nth, current: $current, threshold: DEFAULT_THRESHOLD })
 		}
 		
-		setTimeout(() => {
-			$readyToBeAnimated = true
-		}, 100)
-		
-		clearTimeout(stid)
-		stid = setTimeout(() => {
-			dispatch('after-scroll', { current })
-			emit('afterScroll')
-			
-			wait = false
-			console.log('finished')
-		}, (options.duration < 600 ? 600 : options.duration) + 150)
+		finished.call(null)
 	}
+	
+	const finished = debounce(() => {
+		dispatch('after-scroll', { current: $current })
+		emit('afterScroll')
+		wait = false
+	}, delay)
 	
 	const emit = fn => {
 		plugins.map(p => {
@@ -123,11 +134,12 @@
 				p[fn]
 				.bind({
 					items: $items,
-					current,
+					current: $current,
 					options,
+					constants: { DEFAULT_THRESHOLD },
 					move,
 					getMode,
-					getCurrent,
+					getCurrent: () => $current,
 					...p
 				}).call(null)
 			}
@@ -137,12 +149,12 @@
 	const wheeling = async ({ deltaY }) => {
 		if(wait) return
 		
-		if(!$isNormal) {
+		if(!normal) {
 			wait = true
-			const dir = Math.sign(deltaY)
-			move(current + dir)
+			const dir = Math.sign(deltaY)			
+			move($current + dir)
 		} else {
-			current = Math.ceil(el.scrollTop / el.clientHeight)
+			$current = Math.ceil(el.scrollTop / el.clientHeight)
 		}
 	}
 	
@@ -152,21 +164,22 @@
 		const directions = e.detail.directions;
 		
 		if(directions.top) {
-			move(current - 1)
+			move($current - 1)
 		}
 		if(directions.bottom) {
-			move(current + 1)
+			move($current + 1)
 		}
 	}
 	
 	onMount(() => {
 		mounted = true
-		$readyToBeAnimated = !$isNormal
 		
 		SwipeListener(el)
 		el.addEventListener('swipe', swiping)
 		
-		move(current)
+		$mode = getMode()
+		move($current)
+		
 		emit('init')
 		
 		return () => {
@@ -180,8 +193,8 @@
 
 <div {style}
 bind:this={el}
-class:ms-mode-normal={$isNormal}
-class:ms-mode-scroll={!$isNormal}
+class:ms-mode-normal={normal}
+class:ms-mode-scroll={!normal}
 class="ms-container {className}"
 on:wheel|passive={wheeling}
 on:scroll={wheeling}>

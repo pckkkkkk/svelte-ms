@@ -1,25 +1,47 @@
 <script>
 	import { getContext, setContext, onMount } from 'svelte'
+	import { DEFAULT_THRESHOLD, MODE_NORMAL } from 'svelte-ms/src/Container.svelte';
 	import { writable } from 'svelte/store'
-
-	setContext('nth', writable(null))
-	setContext('left', writable(0))
-	setContext('right', writable(0))
 	
-	let items = getContext('items')
-	let nth = getContext('nth')
-	let left = getContext('left')
-	let right = getContext('right')
-	let readyToBeAnimated = getContext('ready-to-be-animated')
+	setContext('wrapper', {
+		nth: writable(0),
+		left: writable(0),
+		right: writable(0)
+	})
 	
+	let {
+		items,
+		current,
+		isVisible,
+		animDisabled,
+		mode
+	} = getContext('container')
+	
+	let {
+		nth,
+		left,
+		right
+	} = getContext('wrapper')
+	
+	let visible = false, ready = false
+	
+	
+	$: modeChanged($mode)
 	$: position = $items.find(item => item.nth === $nth)
-	$: update(position)
+	$: position && updatePosition(position)
 	
-	const update = (position) => {
-		if(!position) return
-		
+	const modeChanged = () => {
+		ready = false
+		setTimeout(() => {
+			ready = true
+		}, 0)
+	}
+	
+	
+	const updatePosition = position => {		
 		$left = position.left
 		$right = position.right
+		visible = position.visible
 	}
 	
 	onMount(() => {
@@ -28,13 +50,16 @@
 		$items = [...$items, {
 			left: 0,
 			right: -$nth * 2 * 100,
-			nth: $nth
+			nth: $nth,
+			visible: isVisible({ nth: $nth, current: $current, threshold: DEFAULT_THRESHOLD })
 		}]
 	})
 </script>
 
-<div class:ready-to-be-animated={$readyToBeAnimated} class=" ms-wrapper ms-wrapper--{$nth}">
+<div class:ready-to-be-animated={visible && ready && !$animDisabled} class="ms-wrapper ms-wrapper--{$nth}">
+	{#if visible || $mode === MODE_NORMAL}
 	<slot nth={$nth}></slot>
+	{/if}
 </div>
 
 <style>
@@ -54,8 +79,9 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		
 	}
-
+	
 	.ready-to-be-animated :global(> div) {
 		transition: transform calc(1ms * var(--ms-duration)) var(--ms-easing);
 	}
